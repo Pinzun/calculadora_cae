@@ -12,12 +12,30 @@ from unidecode import unidecode
 
 # Constantes
 VALOR_UF = 37944.50
+VALOR_UTM = 66561
 CONTRIBUCION = {
     500000: 0, 600000: 0.021, 700000: 0.037, 800000: 0.05,
     900000: 0.061, 1000000: 0.07, 1250000: 0.07, 1500000: 0.07,
     1750000: 0.07, 2000000: 0.07, 2250000: 0.07, 2500000: 0.07,
     2750000: 0.07, 3000000: 0.08
 }
+
+def pago_tramos(ingreso,utm):
+    if ingreso>utm*11.2:
+        T1=utm*(11.2-7.5)*0.13
+    elif ingreso>utm*7.5:
+        T1=(ingreso-utm*7.5)*0.13
+    else:
+        T1=0
+    if ingreso>99999999:
+        T2=(99999999-utm*11.2)*0.15
+    elif ingreso>utm*11.2:
+        T2=(ingreso-utm*11.2)*0.15
+    else:
+        T2=0
+    return T1+T2
+    
+    
 
 def transformar_texto(texto):
     return unidecode(texto).upper()
@@ -31,10 +49,10 @@ def buscar_contribucion(monto):
 
 def calcular_monto_condonacion(condicion, situacion, cuotas_pagadas, cuotas_totales):
     factor = {
-        ("NO", "SI"): 60,
-        ("NO", "NO"): 30,
-        ("SI", "SI"): 40,
-        ("SI", "NO"): 20
+        ("No", "Sí"): 60,
+        ("No", "No"): 30,
+        ("Sí", "Sí"): 40,
+        ("Sí", "No"): 20
     }
     return factor.get((condicion, situacion), 0) * VALOR_UF * ((cuotas_pagadas / cuotas_totales) + 1)
 
@@ -52,8 +70,8 @@ ingreso_bruto = st.number_input("Indique su ingreso bruto mensual", min_value=0,
 
 try:
     monto_condonacion = calcular_monto_condonacion(condicion_academica, situacion_pago, cuotas_pagadas, cuotas_totales)
-    saldo_deuda =int( deuda_pendiente - monto_condonacion)   
-    st.write(f"Luego de la condonación inicial su monto adeudado es {saldo_deuda:.2f}.", key="saldo_deuda_output")
+    saldo_deuda =int( deuda_pendiente - monto_condonacion)
+    st.write(f"Luego de la condonación inicial su monto adeudado es ${saldo_deuda}.", key="saldo_deuda_output")
 except ZeroDivisionError:
     st.error("Error: La cantidad total de cuotas no puede ser cero. Por favor, ingresa un valor mayor a cero.")
     
@@ -63,13 +81,21 @@ if st.button("Calcular", key="calcular_button"):
         deuda_75 =int( 0.75 * saldo_deuda)
         st.write(f"Usted debe pagar {deuda_75:.2f}", key="deuda_75_output")
     elif pago_anticipado == 'No':
-             
-        contribucion = buscar_contribucion(ingreso_bruto)
-        valor_B = contribucion * ingreso_bruto
-        if valor_B == 0:
-            st.write("Usted no paga cuota mensual", key="no_paga_cuota_output")
-        else:
+        if ingreso_bruto>45*VALOR_UTM:
             valor_A = saldo_deuda / (cuotas_totales - cuotas_pagadas)
+            contribucion = buscar_contribucion(ingreso_bruto)
+            valor_B = contribucion * ingreso_bruto
+            if valor_B == 0:
+                st.write("Usted no paga cuota mensual", key="no_paga_cuota_output")
+            else:
+                monto_cuota = min(valor_A, valor_B)
+                tiempo = (cuotas_totales - cuotas_pagadas) / 12
+                st.write(f"Usted debe pagar ${monto_cuota:.2f} mensualmente por {tiempo:.2f} años", key="monto_cuota_output")
+        else:               
+            valor_A = saldo_deuda / (cuotas_totales - cuotas_pagadas)
+            valor_B = pago_tramos(ingreso_bruto, VALOR_UTM)
+            contribucion = buscar_contribucion(ingreso_bruto)
+            valor_C =contribucion * ingreso_bruto 
             tiempo = (cuotas_totales - cuotas_pagadas) / 12
-            monto_cuota = min(valor_A, valor_B)
+            monto_cuota = min(valor_A, valor_B, valor_C)
             st.write(f"Usted debe pagar ${monto_cuota:.2f} mensualmente por {tiempo:.2f} años", key="monto_cuota_output")
