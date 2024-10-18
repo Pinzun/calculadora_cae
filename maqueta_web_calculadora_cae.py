@@ -71,7 +71,7 @@ ingreso_bruto = st.number_input("Indique su ingreso bruto mensual", min_value=0,
 try:
     monto_condonacion = calcular_monto_condonacion(condicion_academica, situacion_pago, cuotas_pagadas, cuotas_totales)
     saldo_deuda =int( deuda_pendiente - monto_condonacion)
-    st.write(f"Luego de la condonación inicial su monto adeudado es ${saldo_deuda}.", key="saldo_deuda_output")
+    st.write(f"Luego de la condonación inicial su monto adeudado es ${saldo_deuda:,.0f}.", key="saldo_deuda_output")
 except ZeroDivisionError:
     st.error("Error: La cantidad total de cuotas no puede ser cero. Por favor, ingresa un valor mayor a cero.")
     
@@ -79,23 +79,22 @@ pago_anticipado = st.radio("¿Desea realizar el pago anticipado?", ('Sí', 'No')
 if st.button("Calcular", key="calcular_button"):   
     if pago_anticipado == 'Sí':
         deuda_75 =int( 0.75 * saldo_deuda)
-        st.write(f"Usted debe pagar {deuda_75:.2f}", key="deuda_75_output")
+        st.write(f"Usted debe pagar ${deuda_75:,.0f}", key="deuda_75_output")
     elif pago_anticipado == 'No':
-        if ingreso_bruto>45*VALOR_UTM:
+        if ingreso_bruto<7.5*VALOR_UTM:
+            st.write("Usted no paga cuota mensual", key="no_paga_cuota_output")
+        elif ingreso_bruto>45*VALOR_UTM:
             valor_A = saldo_deuda / (cuotas_totales - cuotas_pagadas)
-            contribucion = buscar_contribucion(ingreso_bruto)
-            valor_B = contribucion * ingreso_bruto
-            if valor_B == 0:
-                st.write("Usted no paga cuota mensual", key="no_paga_cuota_output")
-            else:
-                monto_cuota = min(valor_A, valor_B)
-                tiempo = (cuotas_totales - cuotas_pagadas) / 12
-                st.write(f"Usted debe pagar ${monto_cuota:.2f} mensualmente por {tiempo:.2f} años", key="monto_cuota_output")
+            valor_B = 0.08 * ingreso_bruto                
+            monto_cuota = min(valor_A, valor_B)
+            años = (cuotas_totales - cuotas_pagadas) // 12
+            meses = (cuotas_totales - cuotas_pagadas) % 12
+            st.write(f"Usted debe pagar ${monto_cuota:,.0f} mensualmente por {años:.0f} años y {meses} meses", key="monto_cuota_output")
         else:               
             valor_A = saldo_deuda / (cuotas_totales - cuotas_pagadas)
             valor_B = pago_tramos(ingreso_bruto, VALOR_UTM)
-            contribucion = buscar_contribucion(ingreso_bruto)
-            valor_C =contribucion * ingreso_bruto 
-            tiempo = (cuotas_totales - cuotas_pagadas) / 12
+            valor_C = 0.07 * ingreso_bruto 
+            años = (cuotas_totales - cuotas_pagadas) // 12
+            meses = (cuotas_totales - cuotas_pagadas) % 12
             monto_cuota = min(valor_A, valor_B, valor_C)
-            st.write(f"Usted debe pagar ${monto_cuota:.2f} mensualmente por {tiempo:.2f} años", key="monto_cuota_output")
+            st.write(f"Usted debe pagar ${monto_cuota:,.0f} mensualmente por {años:.0f} años y {meses} meses", key="monto_cuota_output")
