@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Thu Oct 10 01:21:34 2024
-aaa
+
 @author: pablo
 """
 #!streamlit run "maqueta_web_calculadora_cae.py"
