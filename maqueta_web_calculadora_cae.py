@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Oct 10 01:21:34 2024
+Created on Fri Oct 18 10:11:10 2024
 
-@author: pablo
+@author: Ivan
 """
+
+
 #!streamlit run "maqueta_web_calculadora_cae.py"
 import streamlit as st
 from unidecode import unidecode
@@ -41,17 +43,19 @@ st.title("Calculadora CAE")
 st.write("Bienvenido a la calculadora CAE. Esta aplicación simula la condonación y el pago de la cuota a la que puedes optar bajo el sistema FES.", key="welcome_message")
 
 # Entrada de variables
-condicion_academica = transformar_texto(st.text_input("¿Egresó de su carrera?", key="condicion_academica_input"))
-situacion_pago = transformar_texto(st.text_input("¿Está al día en el pago de sus cuotas?", key="situacion_pago_input"))
-cuotas_pagadas = st.number_input("Indique la cantidad de cuotas que ha pagado", min_value=0, value=15, step=1, key="cuotas_pagadas_input")
-cuotas_totales = st.number_input("Indique la cantidad de cuotas totales de su crédito CAE", min_value=0, value=30, step=1, key="cuotas_totales_input")
-deuda_pendiente = st.number_input("Indique el monto pendiente por pagar", min_value=0, value=5000000, step=1000, key="deuda_pendiente_input")
+condicion_academica = st.radio("¿Egresó de su carrera?", ('Sí', 'No'), key="condicion_academica_input")
+situacion_pago = st.radio("¿Está al día en el pago de sus cuotas?", ('Sí', 'No'), key="situacion_pago_input")
+cuotas_pagadas = st.number_input("Indique la cantidad de cuotas que ha pagado", min_value=0, value=0, step=1, key="cuotas_pagadas_input")
+cuotas_totales = st.number_input("Indique la cantidad de cuotas totales de su crédito CAE", min_value=0, value=0, step=1, key="cuotas_totales_input")
+deuda_pendiente = st.number_input("Indique el monto pendiente por pagar", min_value=0, value=0, step=1000, key="deuda_pendiente_input")
 ingreso_bruto = st.number_input("Indique su ingreso bruto mensual", min_value=0, value=0, step=1000, key="ingreso_bruto_input")
 
-monto_condonacion = calcular_monto_condonacion(condicion_academica, situacion_pago, cuotas_pagadas, cuotas_totales)
-saldo_deuda =int( deuda_pendiente - monto_condonacion)
-   
-st.write(f"Luego de la condonación inicial su monto adeudado es {saldo_deuda:.2f}.", key="saldo_deuda_output")
+try:
+    monto_condonacion = calcular_monto_condonacion(condicion_academica, situacion_pago, cuotas_pagadas, cuotas_totales)
+    saldo_deuda =int( deuda_pendiente - monto_condonacion)   
+    st.write(f"Luego de la condonación inicial su monto adeudado es {saldo_deuda:.2f}.", key="saldo_deuda_output")
+except ZeroDivisionError:
+    st.error("Error: La cantidad total de cuotas no puede ser cero. Por favor, ingresa un valor mayor a cero.")
     
 pago_anticipado = st.radio("¿Desea realizar el pago anticipado?", ('Sí', 'No'), key="pago_anticipado_radio")
 if st.button("Calcular", key="calcular_button"):   
